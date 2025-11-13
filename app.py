@@ -380,9 +380,12 @@ def register_routes(app):
                 logger.info(f"[{request_id}] Starting LibreOffice conversion...")
                 conversion_start = time.time()
                 
+                # Get the output directory
+                output_dir = os.path.dirname(temp_pdf_path)
+                
                 # Use LibreOffice for conversion (works on Linux)
                 result = subprocess.run(
-                    ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', os.path.dirname(temp_pdf_path), temp_docx_path],
+                    ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', output_dir, temp_docx_path],
                     capture_output=True,
                     text=True,
                     timeout=CONVERSION_TIMEOUT_SECONDS
@@ -393,6 +396,21 @@ def register_routes(app):
                 
                 conversion_time = time.time() - conversion_start
                 logger.info(f"[{request_id}] Conversion completed in {conversion_time:.2f}s")
+                
+                # LibreOffice creates PDF with same basename as input DOCX
+                # e.g., /tmp/xyz.docx -> /tmp/xyz.pdf
+                docx_basename = os.path.basename(temp_docx_path)
+                pdf_basename = os.path.splitext(docx_basename)[0] + '.pdf'
+                actual_pdf_path = os.path.join(output_dir, pdf_basename)
+                
+                logger.info(f"[{request_id}] Expected PDF at: {actual_pdf_path}")
+                
+                # Check if the PDF was created
+                if not os.path.exists(actual_pdf_path):
+                    raise Exception(f"LibreOffice did not create PDF at expected location: {actual_pdf_path}")
+                
+                # Update temp_pdf_path to the actual location
+                temp_pdf_path = actual_pdf_path
                 
                 # Check if conversion timed out
                 if conversion_time > CONVERSION_TIMEOUT_SECONDS:
@@ -582,14 +600,31 @@ def register_routes(app):
             # Convert using LibreOffice
             try:
                 logger.info(f"[{request_id}] Starting LibreOffice conversion for download...")
+                
+                # Get the output directory
+                output_dir = os.path.dirname(temp_pdf_path)
+                
                 result = subprocess.run(
-                    ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', os.path.dirname(temp_pdf_path), temp_docx_path],
+                    ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', output_dir, temp_docx_path],
                     capture_output=True,
                     text=True,
                     timeout=CONVERSION_TIMEOUT_SECONDS
                 )
                 if result.returncode != 0:
                     raise Exception(f"LibreOffice conversion failed: {result.stderr}")
+                
+                # LibreOffice creates PDF with same basename as input DOCX
+                docx_basename = os.path.basename(temp_docx_path)
+                pdf_basename = os.path.splitext(docx_basename)[0] + '.pdf'
+                actual_pdf_path = os.path.join(output_dir, pdf_basename)
+                
+                # Check if the PDF was created
+                if not os.path.exists(actual_pdf_path):
+                    raise Exception(f"LibreOffice did not create PDF at expected location: {actual_pdf_path}")
+                
+                # Update temp_pdf_path to the actual location
+                temp_pdf_path = actual_pdf_path
+                
                 logger.info(f"[{request_id}] Conversion completed successfully")
             except Exception as e:
                 logger.error(f"[{request_id}] Conversion failed: {str(e)}")
