@@ -20,12 +20,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY . .
 
-# Expose port
+# Make start script executable
+RUN chmod +x start.sh
+
+# Expose port (Railway will override with its own PORT)
 EXPOSE 8080
 
 # Set environment variables
-ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
 
-# Run the application with gunicorn
-CMD gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app
+# Run the application using start.sh which properly handles PORT variable
+CMD ["./start.sh"]
