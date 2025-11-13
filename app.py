@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 PDF Conversion Service
-Separate service for Word to PDF conversion using docx2pdf
+Separate service for Word to PDF conversion using LibreOffice
 """
 
 from flask import Flask, request, jsonify, send_file
@@ -17,7 +17,6 @@ from functools import wraps
 from dataclasses import dataclass, asdict
 from typing import Optional, Dict, Any
 from enum import Enum
-import docx2pdf
 
 # Configure logging with more detailed format
 logging.basicConfig(
@@ -376,13 +375,21 @@ def register_routes(app):
                 logger.error(f"[{request_id}] Failed to create temporary files: {str(e)}")
                 raise Exception(f"Temporary file creation failed: {str(e)}")
             
-            # Convert using docx2pdf (100% accurate)
+            # Convert using LibreOffice (works on Linux)
             try:
-                logger.info(f"[{request_id}] Starting docx2pdf conversion...")
+                logger.info(f"[{request_id}] Starting LibreOffice conversion...")
                 conversion_start = time.time()
                 
-                # Perform conversion with timeout handling
-                docx2pdf.convert(temp_docx_path, temp_pdf_path)
+                # Use LibreOffice for conversion (works on Linux)
+                result = subprocess.run(
+                    ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', os.path.dirname(temp_pdf_path), temp_docx_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=CONVERSION_TIMEOUT_SECONDS
+                )
+                
+                if result.returncode != 0:
+                    raise Exception(f"LibreOffice conversion failed: {result.stderr}")
                 
                 conversion_time = time.time() - conversion_start
                 logger.info(f"[{request_id}] Conversion completed in {conversion_time:.2f}s")
@@ -477,7 +484,7 @@ def register_routes(app):
                 'success': True,
                 'pdf_data': pdf_base64,
                 'size': pdf_size,
-                'conversion_method': 'docx2pdf_exact',
+                'conversion_method': 'libreoffice',
                 'processing_time_ms': processing_time_ms,
                 'request_id': request_id
             }), 200
@@ -572,10 +579,17 @@ def register_routes(app):
             
             logger.info(f"[{request_id}] Created temporary files for download conversion")
             
-            # Convert using docx2pdf
+            # Convert using LibreOffice
             try:
-                logger.info(f"[{request_id}] Starting docx2pdf conversion for download...")
-                docx2pdf.convert(temp_docx_path, temp_pdf_path)
+                logger.info(f"[{request_id}] Starting LibreOffice conversion for download...")
+                result = subprocess.run(
+                    ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', os.path.dirname(temp_pdf_path), temp_docx_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=CONVERSION_TIMEOUT_SECONDS
+                )
+                if result.returncode != 0:
+                    raise Exception(f"LibreOffice conversion failed: {result.stderr}")
                 logger.info(f"[{request_id}] Conversion completed successfully")
             except Exception as e:
                 logger.error(f"[{request_id}] Conversion failed: {str(e)}")
