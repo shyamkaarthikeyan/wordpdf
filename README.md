@@ -252,6 +252,24 @@ If conversions fail:
 4. Add tests for new functionality
 5. Submit a pull request
 
+## Deployment
+
+**⚠️ Important**: This service requires LibreOffice and cannot be deployed on Vercel. Use platforms that support Docker or system dependencies.
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions for:
+- Render (Recommended - Free tier)
+- Railway
+- DigitalOcean App Platform
+
+**Quick Deploy to Render:**
+1. Fork/clone this repository
+2. Sign up at https://render.com
+3. Create new Web Service from GitHub
+4. Select this repository
+5. Render will auto-detect the Dockerfile and deploy
+
+**Repository**: https://github.com/shyamkaarthikeyan/wordpdf
+
 ## License
 
 This service is part of the Format-A project and follows the same licensing terms.

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: pdf-conversion-service
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: PYTHON_VERSION
+        value: 3.9
+      - key: FLASK_ENV
+        value: production
+    healthCheckPath: /health
