@@ -19,11 +19,12 @@ The PDF service is deployed separately because it requires:
 
 **Why Render?**
 - Free tier available
-- Native Docker support
+- Supports both Docker and Python buildpacks
 - Easy GitHub integration
 - Automatic deployments
+- Auto-installs LibreOffice
 
-**Steps:**
+**Steps (Python Buildpack - No Docker Required):**
 
 1. **Push to GitHub** (Already done ✓)
    ```bash
@@ -37,10 +38,14 @@ The PDF service is deployed separately because it requires:
    - Connect your GitHub repository: `shyamkaarthikeyan/wordpdf`
    - Configure:
      - **Name**: `pdf-conversion-service`
-     - **Environment**: `Docker`
+     - **Environment**: `Python 3`
      - **Region**: Choose closest to your users
      - **Branch**: `master`
+     - **Build Command**: `pip install -r requirements.txt`
+     - **Start Command**: `gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app`
      - **Plan**: Free
+   - Click "Advanced" and add:
+     - **Native Environment**: Add `libreoffice` and `libreoffice-writer` packages
    - Click "Create Web Service"
 
 3. **Get Your Service URL:**
@@ -51,7 +56,20 @@ The PDF service is deployed separately because it requires:
    - In your `format-a-python-backend` Vercel project
    - Add environment variable: `PDF_SERVICE_URL=https://pdf-conversion-service.onrender.com`
 
-### Option 2: Railway
+**Alternative: Docker Deployment on Render**
+
+If you prefer Docker:
+- Choose **Environment**: `Docker`
+- Render will auto-detect the Dockerfile
+- Everything else is automatic
+
+### Option 2: Railway (No Docker Required)
+
+**Why Railway?**
+- $5 credit/month free
+- No cold starts
+- Auto-detects Python and LibreOffice
+- Uses Nixpacks (no Docker needed)
 
 **Steps:**
 
@@ -60,14 +78,16 @@ The PDF service is deployed separately because it requires:
    - Sign up/Login with GitHub
    - Click "New Project" → "Deploy from GitHub repo"
    - Select `shyamkaarthikeyan/wordpdf`
-   - Railway will auto-detect the Dockerfile
+   - Railway will auto-detect Python and install LibreOffice via `nixpacks.toml`
 
 2. **Configure:**
-   - Add environment variable: `PORT=8080`
-   - Generate domain in Settings
+   - Railway automatically sets `PORT`
+   - Click "Generate Domain" in Settings to get public URL
 
 3. **Update Backend:**
-   - Add `PDF_SERVICE_URL` to your backend environment variables
+   - Add `PDF_SERVICE_URL=https://your-service.railway.app` to your backend environment variables
+
+**Note:** Railway uses the `nixpacks.toml` file which automatically installs LibreOffice without Docker.
 
 ### Option 3: DigitalOcean App Platform
 
