@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY . .
 
-# Make start script executable
-RUN chmod +x start.sh
+# Make entrypoint executable
+RUN chmod +x entrypoint.py
 
 # Expose port (Railway will override with its own PORT)
 EXPOSE 8080
@@ -29,5 +29,5 @@ EXPOSE 8080
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Run the application using start.sh which properly handles PORT variable
-CMD ["./start.sh"]
+# Run the application using Python entrypoint (no shell issues)
+CMD ["python3", "entrypoint.py"]
