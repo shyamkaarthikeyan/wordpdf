@@ -556,6 +556,99 @@ def register_routes(app):
             if cleanup_errors:
                 logger.warning(f"[{request_id}] Cleanup errors: {', '.join(cleanup_errors)}")
     
+    @app.route('/parse', methods=['POST'])
+    def parse_document():
+        """
+        Parse PDF or DOCX document and extract structured content.
+        Returns title, authors, abstract, keywords, sections, and references.
+        """
+        start_time = time.time()
+        request_id = f"req_parse_{int(start_time * 1000)}"
+        
+        logger.info(f"[{request_id}] Starting document parsing request")
+        
+        try:
+            # Check if file was uploaded
+            if 'file' not in request.files:
+                return jsonify({
+                    'success': False,
+                    'error': 'No file uploaded'
+                }), 400
+            
+            file = request.files['file']
+            
+            if file.filename == '':
+                return jsonify({
+                    'success': False,
+                    'error': 'No file selected'
+                }), 400
+            
+            # Read file data
+            file_data = file.read()
+            filename = file.filename.lower()
+            
+            # Determine file type
+            if filename.endswith('.pdf'):
+                file_type = 'pdf'
+            elif filename.endswith('.docx'):
+                file_type = 'docx'
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Unsupported file type. Please upload PDF or DOCX.'
+                }), 400
+            
+            logger.info(f"[{request_id}] Parsing {file_type.upper()} file: {file.filename} ({len(file_data)} bytes)")
+            
+            # Import and use the parser
+            try:
+                # Import the parser from the Python backend
+                import sys
+                import os
+                
+                # Add the format-a-python-backend directory to path
+                backend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'format-a-python-backend')
+                if backend_path not in sys.path:
+                    sys.path.insert(0, backend_path)
+                
+                from document_parser import parse_document as parse_doc
+                
+                # Parse the document
+                parsed_data = parse_doc(file_data, file_type)
+                
+                processing_time_ms = int((time.time() - start_time) * 1000)
+                logger.info(f"[{request_id}] Parsing completed in {processing_time_ms}ms")
+                
+                return jsonify({
+                    'success': True,
+                    'data': parsed_data,
+                    'message': f'Document parsed successfully ({file_type.upper()})',
+                    'processing_time_ms': processing_time_ms
+                }), 200
+                
+            except ImportError as e:
+                logger.error(f"[{request_id}] Failed to import parser: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Document parser not available',
+                    'details': str(e)
+                }), 500
+            except Exception as e:
+                logger.error(f"[{request_id}] Parsing failed: {str(e)}", exc_info=True)
+                return jsonify({
+                    'success': False,
+                    'error': f'Document parsing failed: {str(e)}'
+                }), 500
+        
+        except Exception as e:
+            processing_time_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"[{request_id}] Parse request failed: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'processing_time_ms': processing_time_ms
+            }), 500
+    
     @app.route('/convert-pdf-download', methods=['POST'])
     @require_libreoffice
     def convert_to_pdf_download():
