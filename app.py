@@ -611,7 +611,12 @@ def register_routes(app):
                 if backend_path not in sys.path:
                     sys.path.insert(0, backend_path)
                 
-                from document_parser import parse_document as parse_doc
+                try:
+                    from enhanced_document_parser import parse_document as parse_doc
+                    logger.info(f"[{request_id}] Using EnhancedDocumentParser")
+                except ImportError:
+                    logger.warning(f"[{request_id}] EnhancedDocumentParser not found, falling back to basic parser")
+                    from document_parser import parse_document as parse_doc
                 
                 # Parse the document
                 parsed_data = parse_doc(file_data, file_type)
