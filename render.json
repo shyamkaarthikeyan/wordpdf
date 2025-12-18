@@ -1,0 +1,16 @@
+[
+    {
+        "type": "web",
+        "name": "pdf-conversion-service",
+        "env": "docker",
+        "region": "oregon",
+        "plan": "free",
+        "healthCheckPath": "/health",
+        "envVars": [
+            {
+                "key": "PORT",
+                "value": "10000"
+            }
+        ]
+    }
+]

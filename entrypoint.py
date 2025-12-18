@@ -28,7 +28,7 @@ cmd = [
     'gunicorn',
     'app:app',
     '--bind', f'0.0.0.0:{port}',
-    '--workers', '2',
+    '--workers', '1',
     '--threads', '4',
     '--timeout', '120',
     '--access-logfile', '-',
